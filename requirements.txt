@@ -9,3 +9,4 @@ setuptools==60.2.0
 SQLAlchemy==1.4.42
 Werkzeug==2.2.2
 wheel==0.37.1
+gunicorn==20.1.0
