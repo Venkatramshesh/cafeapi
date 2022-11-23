@@ -7,18 +7,19 @@ from distutils.util import strtobool
 app = Flask(__name__)
 
 ##Connect to Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cafes.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Cafech.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
 
 cafe_apikey = "O0XLPI1AQ0UCKtvkc-StFw"
 
 ##Cafe TABLE Configuration
-class Cafe(db.Model):
+class cafe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), unique=True, nullable=False)
-    map_url = db.Column(db.String(500), nullable=False)
-    img_url = db.Column(db.String(500), nullable=False)
+    web_url = db.Column(db.String(500), nullable=False)
+    #img_url = db.Column(db.String(500), nullable=False)
     location = db.Column(db.String(250), nullable=False)
     seats = db.Column(db.String(250), nullable=False)
     has_toilet = db.Column(db.Boolean, nullable=False)
@@ -36,13 +37,13 @@ def home():
 
 @app.route("/random",methods =['GET', 'POST'])
 def getrandomcafe():
-    random_cafe = random.choice(Cafe.query.all())
+    random_cafe = random.choice(cafe.query.all())
     return jsonify(cafe={
         # Omit the id from the response
         # "id": random_cafe.id,
         "name": random_cafe.name,
-        "map_url": random_cafe.map_url,
-        "img_url": random_cafe.img_url,
+        "web_url": random_cafe.web_url,
+        #"img_url": random_cafe.img_url,
         "location": random_cafe.location,
         "amenities": {
             "seats": random_cafe.seats,
@@ -56,7 +57,7 @@ def getrandomcafe():
 
 @app.route("/all", methods=['GET', 'POST'])
 def allcafe():
-    random_cafe = Cafe.query.all()
+    random_cafe = cafe.query.all()
     n = 0
     allcafe = {}
     for cafes in random_cafe:
@@ -64,8 +65,8 @@ def allcafe():
             # Omit the id from the response
             # "id": random_cafe.id,
             "name": cafes.name,
-            "map_url": cafes.map_url,
-            "img_url": cafes.img_url,
+            "web_url": cafes.web_url,
+            #"img_url": cafes.img_url,
             "location": cafes.location,
             "amenities": {
                 "seats": cafes.seats,
@@ -82,7 +83,7 @@ def allcafe():
 @app.route("/search", methods=['GET', 'POST'])
 def searchcafe():
     cafenamel = request.args.get('location')
-    my_cafe = Cafe.query.filter_by(location=cafenamel).first()
+    my_cafe = cafe.query.filter_by(location=cafenamel).first()
     if my_cafe==None:
         return jsonify(error={"Not Found": "Sorrry, we don't have a cafe at that location"})
     else:
@@ -90,8 +91,8 @@ def searchcafe():
         # Omit the id from the response
         # "id": random_cafe.id,
         "name": my_cafe.name,
-        "map_url": my_cafe.map_url,
-        "img_url": my_cafe.img_url,
+        #"map_url": my_cafe.map_url,
+        "web_url": my_cafe.web_url,
         "location": my_cafe.location,
         "amenities": {
             "seats": my_cafe.seats,
@@ -107,7 +108,7 @@ def searchcafe():
 @app.route("/add",methods=['GET', 'POST'])
 def add():
     #db.create_all()
-   post = Cafe(name=request.form['name'],map_url=request.form['map_url'],img_url=request.form['img_url'],location=request.form['location'],seats=request.form['seats'],has_toilet=strtobool(request.form['has_toilet']),
+   post = cafe(name=request.form['name'],web_url=request.form['web_url'],location=request.form['location'],seats=request.form['seats'],has_toilet=strtobool(request.form['has_toilet']),
                 has_wifi=strtobool(request.form['has_wifi']), has_sockets=strtobool(request.form['has_sockets']), can_take_calls=strtobool(request.form['can_take_calls']),coffee_price=request.form['coffee_price'])
    db.session.add(post)
    db.session.commit()
@@ -115,7 +116,7 @@ def add():
 
 @app.route("/update-price/<cafe_id>")
 def update(cafe_id):
-    cafe_to_update = Cafe.query.filter_by(id=cafe_id).first()
+    cafe_to_update = cafe.query.filter_by(id=cafe_id).first()
     if cafe_to_update==None:
         return jsonify(reponse={"error": "Sorry a cafe with that id was not found in database."}), 404
     else:
@@ -124,17 +125,18 @@ def update(cafe_id):
         return jsonify(reponse={"success": "Successfully updated the price"}),200
 
 # ## HTTP DELETE - Delete Record
-@app.route("/reportclosed/<cafe_id>")
+@app.route("/reportclosed/<cafe_id>",methods=['DELETE'])
 def reportclosed(cafe_id):
     api_key = request.args.get('api_key')
     if api_key != cafe_apikey:
         return jsonify(reponse={"error": "Sorry that's not allowed. Make sure you have the correct api_key."})
     else:
-        cafe_to_update = Cafe.query.filter_by(id=cafe_id).first()
+        cafe_to_update = db.session.query(cafe).get(cafe_id)
+        #cafe_to_update = cafe.query.filter_by(id=cafe_id).first()
         if cafe_to_update==None:
             return jsonify(reponse={"error": {"Not Found" : "Sorry a cafe with that id was not found in database."}})
         else:
-            Cafe.query.filter_by(id=cafe_id).delete()
+            cafe.query.filter_by(id=cafe_id).delete()
             db.session.commit()
             return jsonify(reponse={"success": "Successfully deleted the shop"})
 
